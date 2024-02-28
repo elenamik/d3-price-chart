@@ -1,6 +1,11 @@
-import PriceGrid from "./PriceGrid";
 import { fetchPrices } from "./actions";
+import dynamic from 'next/dynamic'
 
+
+const PriceGrid = dynamic( //removing complexity of SSR
+  () => import('./PriceGrid'),
+  { ssr: false }
+)
 const TOKENS = {
   ATOM: "ibc/C4CFF46FD6DE35CA4CF4CE031E643C8FDC9BA4B99AE598E9B0ED98FE3A2319F9",
   NTRN: "untrn",
@@ -21,7 +26,7 @@ export default async function Home() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
+    <main className="flex min-h-screen flex-col items-center  p-24">
       <PriceGrid prices={prices} />
     </main>
   );
