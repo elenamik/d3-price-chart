@@ -16,7 +16,6 @@ export default async function Home() {
       chainId: CHAIN,
       dateRange: "D7",
     });
-    console.log("### PRICES", prices);
   } catch (error) {
     console.log("there was an error fetching data", error);
   }
