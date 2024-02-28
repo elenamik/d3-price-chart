@@ -1,11 +1,32 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Prices } from "./actions";
 import * as d3 from "d3";
 
+const useWindowDimensions = () => {
+  const [windowDimensions, setWindowDimensions] = useState({
+    innerHeight: window.innerHeight,
+    innerWidth: window.innerWidth,
+  });
+
+  useEffect(() => {
+    function handleResize(e: any) {
+      setWindowDimensions({
+        innerWidth: e.target.innerWidth,
+        innerHeight: e.target.innerHeight,
+      });
+    }
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return windowDimensions;
+};
+
 const LINE_COLORS = [
-  "#1f77b4", // blue
   "#ff7f0e", // orange
+  "#1f77b4", // blue
   "#2ca02c", // green
   "#d62728", // red
   "#9467bd", // purple
@@ -33,39 +54,41 @@ const PriceGrid: React.FC<{
     marginLeft?: number;
     padding?: number;
   };
-}> = ({ prices, options }) => {
-  // destructure with default values
-  const {
-    width = 280,
-    height = 200,
-    marginTop = 20,
-    marginRight = 20,
-    marginBottom = 20,
-    marginLeft = 30,
-    padding = 5,
-  } = options || {};
+}> = ({
+  prices,
+  options = {
+    height: 200,
+    width: 280,
+    marginTop: 20,
+    marginRight: 20,
+    marginBottom: 20,
+    marginLeft: 30,
+    padding: 5,
+  },
+}) => {
+  const { innerWidth } = useWindowDimensions();
 
-  console.log("prices", prices);
+  const MAX_WIDTH = 600;
+
+  const opts = useMemo(() => {
+    const w = Math.min(innerWidth, MAX_WIDTH);
+    return {
+      width: w,
+      height: w * 0.75, // 3:4 aspect ratio
+      marginTop: 20,
+      marginRight: 20,
+      marginBottom: 20,
+      marginLeft: 30,
+      padding: 5,
+    };
+  }, [options, innerWidth]);
+
   const tokens = prices ? Object.keys(prices) : [];
 
-  const item1 = prices ? prices["untrn"] : ({} as Prices["string"]);
-  const series1Formatted = useMemo(() => {
-    return item1.series.map((d) => {
-      return {
-        date: new Date(d.time * 1000),
-        value: d.value,
-      };
-    });
-  }, [prices]);
-
-  const dayCount = useMemo(() => {
-    const uniqueDays = new Set();
-    series1Formatted.forEach(function (d) {
-      const day = d.date.toISOString().split("T")[0];
-      uniqueDays.add(day);
-    });
-    return uniqueDays.size;
-  }, [series1Formatted]);
+  const sample = useMemo(() => {
+    if (!prices) return;
+    return prices[tokens[0]];
+  }, [tokens, prices]);
 
   const gx = useRef<SVGGElement>(null);
   const gy = useRef<SVGGElement>(null);
@@ -91,27 +114,32 @@ const PriceGrid: React.FC<{
     return {
       xAxis: d3
         .scaleTime()
-        .domain(d3.extent(series1Formatted.map((d) => d.date)))
-        .range([0 + marginLeft + padding, width - 10]),
+        .domain(d3.extent(sample.series.map((d) => new Date(d.time * 1000))))
+        .range([0 + opts.marginLeft + opts.padding, opts.width - 10]),
       yAxis: d3
         .scaleLinear()
         .domain(d3.extent([yBounds?.min, yBounds?.max]))
-        .range([height - marginBottom - padding, 10]),
+        .range([opts.height - opts.marginBottom - opts.padding, 10]),
     };
-  }, [
-    yBounds,
-    series1Formatted,
-    marginLeft,
-    padding,
-    width,
-    height,
-    marginBottom,
-  ]);
+  }, [yBounds, opts]);
+
+  // for x ticks
+  const uniqueDays = useMemo(() => {
+    if (!prices) return [];
+
+    const sample = prices[tokens[0]].series;
+    const uniqueDays = new Set();
+    sample.forEach(function (d) {
+      const date = new Date(d.time * 1000);
+      const day = date.toISOString().split("T")[0];
+      uniqueDays.add(day);
+    });
+    return uniqueDays.size;
+  }, [prices, tokens]);
 
   const line = d3
     .line()
     .x((d) => {
-      console.log("in line", d);
       return xAxis(new Date(d.time * 1000));
     })
     .y((d) => yAxis(d.value));
@@ -121,10 +149,10 @@ const PriceGrid: React.FC<{
       d3
         .axisBottom(xAxis)
         .tickSizeOuter(0)
-        .ticks(dayCount)
+        .ticks(uniqueDays)
         .tickFormat(d3.timeFormat("%m/%d")),
     );
-  }, [gx, xAxis, dayCount]);
+  }, [gx, xAxis, uniqueDays]);
 
   useEffect(() => {
     d3.select(gy.current).call(d3.axisLeft(yAxis).tickSizeOuter(0));
@@ -136,13 +164,16 @@ const PriceGrid: React.FC<{
 
   return (
     <>
-      <svg width={width} height={height}>
-        <g ref={gx} transform={`translate(0,${height - marginBottom})`} />
-        <g ref={gy} transform={`translate(${marginLeft},0)`} />
+      <svg width={opts.width} height={opts.height}>
+        <g
+          ref={gx}
+          transform={`translate(0,${opts.height - opts.marginBottom})`}
+        />
+        <g ref={gy} transform={`translate(${opts.marginLeft},0)`} />
         {tokens.map((t, i) => {
           const data = prices[t];
           return (
-            <>
+            <Fragment key={`token-data-${i}`}>
               <path
                 fill="none"
                 stroke={LINE_COLORS[i]}
@@ -163,7 +194,7 @@ const PriceGrid: React.FC<{
                   />
                 ))}
               </g>
-            </>
+            </Fragment>
           );
         })}
       </svg>
