@@ -1,11 +1,11 @@
 import { fetchPrices } from "./actions";
-import dynamic from 'next/dynamic'
+import dynamic from "next/dynamic";
 
-
-const PriceGrid = dynamic( //removing complexity of SSR
-  () => import('./PriceGrid'),
-  { ssr: false }
-)
+const PriceGrid = dynamic(
+  //removing complexity of SSR
+  () => import("./PriceGrid"),
+  { ssr: false },
+);
 const TOKENS = {
   ATOM: "ibc/C4CFF46FD6DE35CA4CF4CE031E643C8FDC9BA4B99AE598E9B0ED98FE3A2319F9",
   NTRN: "untrn",
