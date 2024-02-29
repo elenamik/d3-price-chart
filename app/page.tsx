@@ -26,8 +26,8 @@ export default async function Home() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center  p-24">
-      <PriceGrid prices={prices} />
+    <main className="flex min-h-screen flex-col items-center pt-8">
+      <PriceGrid title={"ATOM-NTRN 7 DAY"} prices={prices} />
     </main>
   );
 }
