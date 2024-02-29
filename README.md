@@ -1,11 +1,12 @@
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Assumptions
-
-- no SDK to query astroport
-- mobile support is required, smallest screen 320px
-- tailwindcss, nextjs (data fetched with server components), react
-- values do not need to be refreshed frequently (by default everything is cached unless page is re-opened)
+- stack used is next14 (server components + app router) + d3 (for graphing)
+- component should be responsive, smallest screen to support is 320px
+- component does not accept sizing config (not important for use case), although it can be easily added
+- data does not need to refreshed more frequently than page load (default cache behavior in next14)
+- ts-ignores are OK - did not prioritize resolving d3 ts errors, since graph rendered fine
+- no SDK to query astroport (needed to define own types)
 
 ## Quick Lint
 
